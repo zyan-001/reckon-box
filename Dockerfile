@@ -10,8 +10,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
 
-# 复制依赖文件
-COPY pyproject.toml uv.lock ./
+# 复制依赖文件和 README（hatchling 构建需要）
+COPY pyproject.toml uv.lock README.md ./
 
 # 使用 uv 安装依赖 (系统级安装，不需要虚拟环境)
 RUN uv sync --frozen --no-cache
