@@ -1,0 +1,235 @@
+# 软件系统设计领域包
+# 在线商城微服务架构 - 学生配置系统设计参数观察失败涌现
+
+meta:
+  name: "软件系统设计"
+  description: "在线商城微服务架构"
+
+component_types:
+  gateway:
+    display_name: "API网关"
+    params:
+      replicas:           { type: int,  min: 1,   max: 10,    default: 2 }
+      cpu_per_replica:     { type: int,  min: 10,  max: 200,   default: 100 }
+      memory_limit:        { type: int,  min: 128, max: 4096,  default: 1024, unit: MB }
+      queue_capacity:      { type: int,  min: 50,  max: 2000,  default: 500 }
+      timeout_ms:          { type: int,  min: 100, max: 10000, default: 2000, unit: ms }
+      retry_count:         { type: int,  min: 0,   max: 10,    default: 0 }
+      has_circuit_breaker: { type: bool, default: false }
+      has_rate_limiter:    { type: bool, default: false }
+      rate_limit:          { type: int,  min: 0,   max: 10000, default: 0 }
+      memory_per_request:  { type: int,  min: 1,   max: 50,    default: 5, unit: MB }
+    can_depend_on: [service]
+
+  service:
+    display_name: "微服务"
+    params:
+      replicas:           { type: int,  min: 1,   max: 10,    default: 2 }
+      cpu_per_replica:     { type: int,  min: 10,  max: 200,   default: 100 }
+      memory_limit:        { type: int,  min: 128, max: 4096,  default: 1024, unit: MB }
+      queue_capacity:      { type: int,  min: 50,  max: 2000,  default: 500 }
+      timeout_ms:          { type: int,  min: 100, max: 10000, default: 2000, unit: ms }
+      retry_count:         { type: int,  min: 0,   max: 10,    default: 0 }
+      has_circuit_breaker: { type: bool, default: false }
+      has_rate_limiter:    { type: bool, default: false }
+      rate_limit:          { type: int,  min: 0,   max: 10000, default: 0 }
+      memory_per_request:  { type: int,  min: 1,   max: 50,    default: 5, unit: MB }
+    can_depend_on: [service, database, cache]
+
+  database:
+    display_name: "数据库"
+    params:
+      replicas:           { type: int,  min: 1,   max: 10,    default: 2 }
+      cpu_per_replica:     { type: int,  min: 10,  max: 200,   default: 100 }
+      memory_limit:        { type: int,  min: 128, max: 4096,  default: 1024, unit: MB }
+      queue_capacity:      { type: int,  min: 50,  max: 2000,  default: 500 }
+      timeout_ms:          { type: int,  min: 100, max: 10000, default: 2000, unit: ms }
+      retry_count:         { type: int,  min: 0,   max: 10,    default: 0 }
+      has_circuit_breaker: { type: bool, default: false }
+      has_rate_limiter:    { type: bool, default: false }
+      rate_limit:          { type: int,  min: 0,   max: 10000, default: 0 }
+      memory_per_request:  { type: int,  min: 1,   max: 50,    default: 5, unit: MB }
+    can_depend_on: []
+
+  cache:
+    display_name: "缓存"
+    params:
+      replicas:           { type: int,  min: 1,   max: 10,    default: 2 }
+      cpu_per_replica:     { type: int,  min: 10,  max: 200,   default: 100 }
+      memory_limit:        { type: int,  min: 128, max: 4096,  default: 1024, unit: MB }
+      queue_capacity:      { type: int,  min: 50,  max: 2000,  default: 500 }
+      timeout_ms:          { type: int,  min: 100, max: 10000, default: 2000, unit: ms }
+      retry_count:         { type: int,  min: 0,   max: 10,    default: 0 }
+      has_circuit_breaker: { type: bool, default: false }
+      has_rate_limiter:    { type: bool, default: false }
+      rate_limit:          { type: int,  min: 0,   max: 10000, default: 0 }
+      memory_per_request:  { type: int,  min: 1,   max: 50,    default: 5, unit: MB }
+    can_depend_on: []
+
+  message_queue:
+    display_name: "消息队列"
+    params:
+      replicas:           { type: int,  min: 1,    max: 10,    default: 2 }
+      cpu_per_replica:     { type: int,  min: 10,  max: 200,   default: 100 }
+      memory_limit:        { type: int,  min: 128, max: 4096,  default: 1024, unit: MB }
+      queue_capacity:      { type: int,  min: 50,  max: 2000,  default: 500 }
+      timeout_ms:          { type: int,  min: 100, max: 10000, default: 2000, unit: ms }
+      retry_count:         { type: int,  min: 0,   max: 10,    default: 0 }
+      has_circuit_breaker: { type: bool, default: false }
+      memory_per_request:  { type: int,  min: 1,   max: 50,    default: 5, unit: MB }
+      partitions:          { type: int,  min: 1,   max: 16,    default: 3,   unit: "" }
+      retention_ms:        { type: int,  min: 1000, max: 60000, default: 5000, unit: ms }
+      delivery:            { type: str,  default: "at_least_once" }
+      consumer_lag:        { type: int,  min: 0,   max: 50,    default: 0,   unit: ticks }
+    can_depend_on: [service, database, scheduled_task]
+
+  scheduled_task:
+    display_name: "定时任务"
+    params:
+      replicas:           { type: int,  min: 1,   max: 10,    default: 2 }
+      cpu_per_replica:     { type: int,  min: 10,  max: 200,   default: 100 }
+      memory_limit:        { type: int,  min: 128, max: 4096,  default: 1024, unit: MB }
+      queue_capacity:      { type: int,  min: 50,  max: 2000,  default: 500 }
+      timeout_ms:          { type: int,  min: 100, max: 5000,  default: 1000, unit: ms }
+      retry_count:         { type: int,  min: 0,   max: 10,    default: 0 }
+      has_circuit_breaker: { type: bool, default: false }
+      memory_per_request:  { type: int,  min: 1,   max: 50,    default: 5, unit: MB }
+      cron_interval:       { type: int,  min: 5,   max: 100,   default: 10,  unit: ticks }
+      jitter:              { type: int,  min: 0,   max: 5,     default: 0,   unit: ticks }
+      max_retries:         { type: int,  min: 0,   max: 3,     default: 0,   unit: "" }
+    can_depend_on: [service, database, message_queue]
+
+dependency_rules:
+  forbid_cycles: true
+  max_depth: 5
+
+scenarios:
+  - id: normal
+    name: "正常流量"
+    description: "稳定的日常流量，约30请求/tick"
+    phases:
+      - { ticks: 100, rps: 30 }
+
+  - id: flash_sale
+    name: "秒杀洪峰"
+    description: "流量暴涨10倍后回落"
+    phases:
+      - { ticks: 20, rps: 30 }
+      - { ticks: 30, rps: 300 }
+      - { ticks: 30, rps: 200 }
+      - { ticks: 20, rps: 50 }
+
+  - id: db_slow
+    name: "数据库变慢"
+    description: "数据库处理能力逐渐下降"
+    phases:
+      - { ticks: 100, rps: 40 }
+    inject:
+      - target: database
+        action: degrade_cpu
+        start_tick: 10
+        interval: 5
+        amount: 2
+
+  - id: partial_failure
+    name: "部分服务崩溃"
+    description: "Tick 30时支付服务全部崩溃"
+    phases:
+      - { ticks: 100, rps: 35 }
+    inject:
+      - target: payment_service
+        action: crash_all
+        at_tick: 30
+
+failure_taxonomy:
+  - retry_storm
+  - spof_cascade
+  - queue_overflow
+  - missing_circuit_breaker
+  - memory_exhaustion
+  - missing_rate_limiter
+
+concepts:
+  - redundancy
+  - failure_isolation
+  - backpressure
+  - retry_semantics
+  - resource_sizing
+  - dependency_management
+  - timeout_strategy
+  - graceful_degradation
+  - async_decoupling: "异步解耦——消息队列阻断同步级联故障"
+  - scheduled_trigger: "定时触发——定时任务的调度与羊群效应"
+
+teaching_cards:
+  retry_storm:
+    title: "重试风暴"
+    concept: "retry_semantics"
+    explanation: "重试放大效应：当 retry_count=N 时，单次请求在下游故障时最多产生 N+1 次调用。如果多个上游同时重试，故障服务收到的流量会呈指数级放大，反而延缓了恢复。"
+    code_example: "retry_count=3 → 故障时负载放大 4 倍\nretry_count=0 + circuit_breaker → 快速失败，保护下游"
+    related_concepts:
+      - backpressure
+      - failure_isolation
+
+  spof_cascade:
+    title: "单点故障级联"
+    concept: "redundancy"
+    explanation: "单副本组件是系统的单点故障（SPOF）。当它崩溃时，所有依赖它的上游都会失败，故障沿依赖链向上传播，最终导致整个系统不可用。增加副本数可以将单点风险转化为部分可用，但需要配合健康检查与流量切换才能真正隔离故障。"
+    code_example: "replicas=1 → 崩溃后依赖方全部失败\ncore_service.replicas=3 → 单实例崩溃仍有 2/3 容量"
+    related_concepts:
+      - failure_isolation
+      - dependency_management
+
+  queue_overflow:
+    title: "队列溢出"
+    concept: "backpressure"
+    explanation: "队列容量是有限的缓冲区，不是无限的蓄水池。当下游处理速度持续低于上游到达速度时，队列会逐渐填满，最终溢出丢弃请求。背压（backpressure）机制应当让上游感知到下游的拥堵，主动降低发送速率，而不是继续向已满的队列堆积请求。"
+    code_example: "queue_capacity=500 + 下游慢 → 队列满后丢弃新请求\n上游 backpressure → 主动限速，队列保持稳定水位"
+    related_concepts:
+      - graceful_degradation
+      - retry_semantics
+
+  missing_circuit_breaker:
+    title: "缺少熔断器保护"
+    concept: "failure_isolation"
+    explanation: "没有熔断器时，下游故障会通过重试和等待不断消耗上游资源（线程、连接、内存）。熔断器在检测到连续失败后『打开』，让后续请求快速失败而非等待超时，从而保护上游不被下游拖垮。熔断器应当配合降级逻辑使用——返回缓存、默认值或友好错误，而不是让用户看到原始异常。"
+    code_example: "has_circuit_breaker=false → 下游故障时线程堆积，上游也被拖死\nhas_circuit_breaker=true → 连续失败后快速失败，上游保持可用"
+    related_concepts:
+      - retry_semantics
+      - graceful_degradation
+
+  memory_exhaustion:
+    title: "内存耗尽"
+    concept: "resource_sizing"
+    explanation: "每个请求会占用内存（memory_per_request），当并发请求量超过 (memory_limit / memory_per_request) 时，组件会因内存不足而崩溃。内存配额既要考虑单请求开销，也要考虑并发量。盲目调大 memory_limit 只是延缓问题，根本策略是控制并发（限流）或降低单请求内存占用。"
+    code_example: "memory_limit=1024MB, memory_per_request=5MB → 最多并发 204 请求\n超并发 → OOM 崩溃，重启风暴"
+    related_concepts:
+      - resource_sizing
+      - graceful_degradation
+
+  missing_rate_limiter:
+    title: "缺少限流保护"
+    concept: "graceful_degradation"
+    explanation: "没有限流时，突发流量会直接压垮系统的最薄弱环节。限流器在入口处控制请求速率，超出部分排队或拒绝，保护后端服务在容量范围内稳定运行。限流虽然会损失部分请求，但保证了系统的可用性——宁可部分用户看到限流提示，也不要让全部用户看到系统崩溃。"
+    code_example: "has_rate_limiter=false → 秒杀流量直达后端，全链路崩溃\nhas_rate_limiter=true, rate_limit=200 → 超出部分拒绝，核心链路稳定"
+    related_concepts:
+      - backpressure
+      - resource_sizing
+
+  consumer_lag_accumulation:
+    title: "消费者积压"
+    concept: "async_decoupling"
+    explanation: "消息队列的消费者处理速度如果持续低于生产速度，未处理消息会越积越多（consumer_lag 增大）。积压不仅意味着延迟增加，还可能触发消息过期丢弃、内存占用上升等次生问题。解决积压需要增加消费者并行度（分区数）或提升单消费者处理能力，而不是单纯扩大队列容量——那只是把延迟问题藏起来。"
+    code_example: "consumer_lag 持续上升 → 消息处理延迟不断增大\npartitions=8 + 多消费者并行 → 消费速度匹配生产速度，lag 趋稳"
+    related_concepts:
+      - backpressure
+      - resource_sizing
+
+  scheduled_task_thundering_herd:
+    title: "定时任务羊群效应"
+    concept: "scheduled_trigger"
+    explanation: "多个定时任务如果在同一时刻触发（cron_interval 相同且无 jitter），会瞬间产生大量并发请求，形成『羊群效应』冲击下游服务。添加 jitter（随机抖动）可以让任务执行时间分散开来，避免同步触发的尖峰。同时 max_retries 控制单个任务的重试上限，防止任务失败时通过重试放大对下游的冲击。"
+    code_example: "cron_interval=10, jitter=0 → 多任务同 tick 触发，下游瞬时过载\ncron_interval=10, jitter=5 → 任务分散在 [10,15] tick 内触发，峰值削平"
+    related_concepts:
+      - retry_semantics
+      - backpressure
