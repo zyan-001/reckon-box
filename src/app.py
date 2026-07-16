@@ -48,7 +48,10 @@ def _apply_styles():
 # ---------------------------------------------------------------------------
 ADMIN_PWD = os.environ.get("APP_ADMIN_PWD")
 TOURIST_PWD = os.environ.get("APP_TOURIST_PWD")
-TOURIST_LIMIT = int(os.environ.get("APP_TOURIST_LIMIT", "10"))
+try:
+    TOURIST_LIMIT = int(os.environ.get("APP_TOURIST_LIMIT", "10"))
+except ValueError:
+    TOURIST_LIMIT = 10
 
 def _check_auth() -> bool:
     """自定义密码认证（区分 admin 和 tourist）"""

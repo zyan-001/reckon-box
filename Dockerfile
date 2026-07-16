@@ -19,8 +19,8 @@ RUN uv sync --frozen --no-cache
 # 复制项目代码
 COPY . .
 
-# 暴露端口
-EXPOSE $PORT
+# 暴露端口（Railway 会覆盖此环境变量，但这是默认值）
+EXPOSE 8080
 
-# 启动 Streamlit 应用，绑定到 0.0.0.0 和 Railway 提供的 PORT
-CMD uv run streamlit run src/app.py --server.port=$PORT --server.address=0.0.0.0
+# 启动 Streamlit 应用，绑定到 0.0.0.0 和 Railway 提供的 PORT（如果没提供则用 8080）
+CMD uv run streamlit run src/app.py --server.port=${PORT:-8080} --server.address=0.0.0.0 --server.enableCORS=false --server.enableXsrfProtection=false
