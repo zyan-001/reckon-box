@@ -123,6 +123,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+!.env.example
 .venv
 env/
 venv/
@@ -165,9 +167,6 @@ cython_debug/
 .cursor/
 .trae/
 
-# Streamlit
-.streamlit/
-
 # OS generated files
 .DS_Store
 .DS_Store?
@@ -180,3 +179,7 @@ Thumbs.db
 # Project specific
 .uploads/
 *.log
+
+# Node
+node_modules/
+dist/

@@ -1,9 +1,0 @@
-.venv
-.git
-.gitignore
-__pycache__
-.pytest_cache
-.cursor
-.trae
-tests/
-.env

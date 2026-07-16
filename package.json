@@ -1,0 +1,12 @@
+{
+  "name": "reckon-box",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:backend": "cd packages/backend && uv run uvicorn src.main:app --reload --port 8000",
+    "dev:frontend": "cd packages/frontend && npm run dev",
+    "dev": "echo '请分别在终端运行 dev:backend 和 dev:frontend'",
+    "build:frontend": "cd packages/frontend && npm run build",
+    "test:backend": "cd packages/backend && uv run pytest"
+  }
+}
