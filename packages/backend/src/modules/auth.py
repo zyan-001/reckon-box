@@ -35,6 +35,8 @@ _tourist_password: str | None = None
 def _get_passwords():
     global _admin_password, _tourist_password
     if _admin_password is None:
+        from src.utils.llm_config import _load_dotenv_once
+        _load_dotenv_once()
         import os
         _admin_password = os.getenv("ADMIN_PASSWORD", "")
         _tourist_password = os.getenv("TOURIST_PASSWORD", "")
