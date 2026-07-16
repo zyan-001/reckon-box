@@ -21,8 +21,8 @@ COPY packages/backend/src/ ./src/
 # 复制前端构建产物
 COPY --from=frontend-build /build/dist ./src/static/
 
-# 安装依赖
-RUN uv sync --no-dev --frozen
+# 安装依赖（Docker 环境用官方 PyPI，不走清华镜像）
+RUN uv sync --no-dev --index-strategy unsafe-best-match
 
 # 暴露端口
 EXPOSE 80
