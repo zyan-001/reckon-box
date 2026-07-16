@@ -43,24 +43,47 @@ def _apply_styles():
     )
 
 
-def _check_auth() -> bool:
-    """Streamlit Cloud 原生认证。本地未配置时自动放行。"""
-    try:
-        user = st.experimental_user
-        if getattr(user, "is_logged_in", False):
-            return True
-    except Exception:
-        return True
+# ---------------------------------------------------------------------------
+# 认证与额度控制
+# ---------------------------------------------------------------------------
+ADMIN_PWD = os.environ.get("APP_ADMIN_PWD", "admin")
+TOURIST_PWD = os.environ.get("APP_TOURIST_PWD", "tourist")
+TOURIST_LIMIT = int(os.environ.get("APP_TOURIST_LIMIT", "10"))
 
-    # 认证已配置但未登录
-    if not hasattr(st, "login"):
+def _check_auth() -> bool:
+    """自定义密码认证（区分 admin 和 tourist）"""
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+        st.session_state.role = None
+        st.session_state.llm_call_count = 0
+
+    if st.session_state.logged_in:
         return True
 
     st.markdown("## 🔐 登录 ReckonBox")
-    st.write("请登录后开始使用。")
-    try:
-        st.login()
-    except Exception:
+    st.write("请输入访问密码以继续。")
+    
+    pwd = st.text_input("密码", type="password", key="login_pwd")
+    if st.button("登录", type="primary"):
+        if pwd == ADMIN_PWD:
+            st.session_state.logged_in = True
+            st.session_state.role = "admin"
+            st.rerun()
+        elif pwd == TOURIST_PWD:
+            st.session_state.logged_in = True
+            st.session_state.role = "tourist"
+            st.rerun()
+        else:
+            st.error("密码错误")
+            
+    return False
+
+def _consume_llm_quota() -> bool:
+    """尝试消耗一次 LLM 调用额度。如果额度耗尽，返回 False。"""
+    if st.session_state.role == "admin":
+        return True
+    if st.session_state.llm_call_count < TOURIST_LIMIT:
+        st.session_state.llm_call_count += 1
         return True
     return False
 
@@ -125,7 +148,12 @@ def _render_remediation_tabs(current_spec):
             st.markdown(f"### 场景 {i + 1}: {scenario_name}")
             _render_metrics(report)
             
-            remediation = generate_guidance(report, to_dict(current_spec), blackbox_dict)
+            if not _consume_llm_quota():
+                st.warning(f"⚠️ 游客体验额度已耗尽（{TOURIST_LIMIT}次），无法生成 AI 修复建议。")
+                from modules.remediation_guide import RemediationReport
+                remediation = RemediationReport(crash_analysis=[], teaching_cards=[], design_guidance=[])
+            else:
+                remediation = generate_guidance(report, to_dict(current_spec), blackbox_dict)
             
             tab1, tab2, tab3 = st.tabs(["🚨 崩溃复盘", "💡 认知诊断", "🛠️ 改进建议"])
             
@@ -298,8 +326,21 @@ def _render_component_editor_inline(current_spec, domain_pack):
 
 
 def _render_header():
-    st.title("ReckonBox")
-    st.caption("建构主义系统设计沙盒：设计 → 模拟 → 观察失败 → 获得启发")
+    cols = st.columns([3, 1])
+    with cols[0]:
+        st.title("ReckonBox")
+        st.caption("建构主义系统设计沙盒：设计 → 模拟 → 观察失败 → 获得启发")
+    with cols[1]:
+        if st.session_state.get("logged_in"):
+            role = st.session_state.get("role", "tourist")
+            role_display = "管理员" if role == "admin" else "游客"
+            st.markdown(f"<div style='text-align: right; padding-top: 1rem; color: #666;'>👤 当前身份: <b>{role_display}</b></div>", unsafe_allow_html=True)
+            if role == "tourist":
+                used = st.session_state.get("llm_call_count", 0)
+                st.markdown(f"<div style='text-align: right; font-size: 0.8em; color: #888;'>额度: {used}/{TOURIST_LIMIT}</div>", unsafe_allow_html=True)
+            if st.button("退出登录", key="logout_btn", use_container_width=True):
+                st.session_state.logged_in = False
+                st.rerun()
 
 def _render_metrics(report):
     cols = st.columns(4)
@@ -444,24 +485,27 @@ def _render_scenario_flow(current_spec, domain_pack):
             label_visibility="collapsed"
         )
         if st.button("解析场景", type="primary"):
-            try:
-                from modules.scenario_parser import parse_scenario
-                with st.spinner("AI 正在解析场景边界..."):
-                    spec, msg = parse_scenario(nlp_input)
-                if spec:
-                    st.session_state["blackbox_spec"] = spec
-                    # 场景变更后重置下游状态
-                    st.session_state.pop("design_variants", None)
-                    st.session_state.pop("selected_options", None)
-                    st.session_state.pop("param_suggestions", None)
-                    st.session_state.pop("param_advice_msg", None)
-                    st.session_state.pop("scenario_reports", None)
-                    st.session_state.pop("scenario_list", None)
-                    st.session_state["setup_step"] = 2
-                else:
-                    st.error(msg)
-            except Exception as exc:
-                st.error(f"场景解析出错: {exc}")
+            if not _consume_llm_quota():
+                st.error(f"⚠️ 游客体验额度已耗尽（{TOURIST_LIMIT}次）。请联系管理员获取更多额度。")
+            else:
+                try:
+                    from modules.scenario_parser import parse_scenario
+                    with st.spinner("AI 正在解析场景边界..."):
+                        spec, msg = parse_scenario(nlp_input)
+                    if spec:
+                        st.session_state["blackbox_spec"] = spec
+                        # 场景变更后重置下游状态
+                        st.session_state.pop("design_variants", None)
+                        st.session_state.pop("selected_options", None)
+                        st.session_state.pop("param_suggestions", None)
+                        st.session_state.pop("param_advice_msg", None)
+                        st.session_state.pop("scenario_reports", None)
+                        st.session_state.pop("scenario_list", None)
+                        st.session_state["setup_step"] = 2
+                    else:
+                        st.error(msg)
+                except Exception as exc:
+                    st.error(f"场景解析出错: {exc}")
 
     # Step 2: 黑盒规格展示 + 变更点选择
     if "blackbox_spec" not in st.session_state:
@@ -485,16 +529,20 @@ def _render_scenario_flow(current_spec, domain_pack):
 
         # 识别变更点
         if "design_variants" not in st.session_state or not st.session_state["design_variants"]:
-            try:
-                from modules.variant_identifier import identify_variants
-                with st.spinner("AI 正在挖掘架构分歧点..."):
-                    variants, msg = identify_variants(spec)
-                st.session_state["design_variants"] = variants
-                if not variants:
-                    st.info(msg)
-            except Exception as exc:
+            if not _consume_llm_quota():
+                st.warning(f"⚠️ 游客体验额度已耗尽（{TOURIST_LIMIT}次），无法获取 AI 架构建议。")
                 st.session_state["design_variants"] = []
-                st.error(f"变更点识别出错: {exc}")
+            else:
+                try:
+                    from modules.variant_identifier import identify_variants
+                    with st.spinner("AI 正在挖掘架构分歧点..."):
+                        variants, msg = identify_variants(spec)
+                    st.session_state["design_variants"] = variants
+                    if not variants:
+                        st.info(msg)
+                except Exception as exc:
+                    st.session_state["design_variants"] = []
+                    st.error(f"变更点识别出错: {exc}")
 
         # 展示变更点选项
         if st.session_state.get("design_variants"):
