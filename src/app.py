@@ -46,8 +46,8 @@ def _apply_styles():
 # ---------------------------------------------------------------------------
 # 认证与额度控制
 # ---------------------------------------------------------------------------
-ADMIN_PWD = os.environ.get("APP_ADMIN_PWD", "admin")
-TOURIST_PWD = os.environ.get("APP_TOURIST_PWD", "tourist")
+ADMIN_PWD = os.environ.get("APP_ADMIN_PWD")
+TOURIST_PWD = os.environ.get("APP_TOURIST_PWD")
 TOURIST_LIMIT = int(os.environ.get("APP_TOURIST_LIMIT", "10"))
 
 def _check_auth() -> bool:
@@ -61,6 +61,11 @@ def _check_auth() -> bool:
         return True
 
     st.markdown("## 🔐 登录 ReckonBox")
+    
+    if not ADMIN_PWD or not TOURIST_PWD:
+        st.error("⚠️ 系统未配置访问密码，请在环境变量中设置 `APP_ADMIN_PWD` 和 `APP_TOURIST_PWD`。")
+        return False
+
     st.write("请输入访问密码以继续。")
     
     pwd = st.text_input("密码", type="password", key="login_pwd")
