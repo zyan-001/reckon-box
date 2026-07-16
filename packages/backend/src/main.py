@@ -21,6 +21,8 @@ if _src_dir not in sys.path:
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 app = FastAPI(
@@ -428,3 +430,24 @@ async def review_simulation(req: ReviewRequest):
         "knowledge_cards": result.knowledge_cards,
         "summary": result.summary,
     }
+
+
+# ---------------------------------------------------------------------------
+# 前端静态文件托管（生产环境：后端同时 serve 前端）
+# ---------------------------------------------------------------------------
+
+_static_dir = os.path.join(os.path.dirname(__file__), "static")
+
+if os.path.isdir(_static_dir):
+    # 挂载静态资源（js/css/images）
+    app.mount("/assets", StaticFiles(directory=os.path.join(_static_dir, "assets")), name="static-assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """SPA 路由回退：非 /api/ 路径返回 index.html"""
+        if full_path.startswith("api/"):
+            raise HTTPException(404)
+        file_path = os.path.join(_static_dir, full_path)
+        if full_path and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        return FileResponse(os.path.join(_static_dir, "index.html"))
