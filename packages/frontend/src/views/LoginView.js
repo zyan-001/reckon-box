@@ -1,7 +1,7 @@
 // 登录视图
 
 import { api } from '../api.js'
-import { store } from '../state.js'
+import { store, loadAppData } from '../state.js'
 import { goTo } from '../router.js'
 
 export function LoginView() {
@@ -61,6 +61,10 @@ export function LoginView() {
       store.token = res.token
       store.llmRemaining = res.remaining
       store.llmLimit = res.role === 'tourist' ? 3 : -1
+      
+      // 登录成功后加载领域包数据
+      await loadAppData()
+      
       goTo('scenario')
     } catch (err) {
       loginBtn.disabled = false

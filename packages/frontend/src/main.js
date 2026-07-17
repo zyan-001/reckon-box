@@ -2,7 +2,7 @@
 
 import './style.css'
 import { api } from './api.js'
-import { store } from './state.js'
+import { store, loadAppData } from './state.js'
 import { renderApp } from './router.js'
 import { updateSidebarStatus, updateSidebarUserInfo } from './components/Sidebar.js'
 
@@ -37,19 +37,6 @@ async function init() {
   }
 
   renderApp()
-}
-
-async function loadAppData() {
-  try {
-    store.strategyTemplates = await api.templates()
-  } catch (err) {
-    console.error('加载策略模板失败:', err)
-  }
-  try {
-    store.domainPack = await api.domainPacks()
-  } catch (err) {
-    console.error('加载领域包失败:', err)
-  }
 }
 
 // 暴露给全局，供各视图调用后刷新 LLM 剩余次数

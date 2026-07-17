@@ -1,6 +1,7 @@
 // ReckonBox 全局状态（轻量级 Store，直接内存对象）
 
 import { reactive } from './utils/reactive.js'
+import { api } from './api.js'
 
 export const store = reactive({
   // 后端健康状态
@@ -64,4 +65,48 @@ export function removeComponent(name) {
       (e) => e.target !== name
     )
   })
+}
+
+export function renameComponent(oldName, newName) {
+  if (!newName || oldName === newName || store.components[newName]) return false
+  
+  const comp = store.components[oldName]
+  if (!comp) return false
+  
+  comp.name = newName
+  store.components[newName] = comp
+  delete store.components[oldName]
+  
+  if (store.selectedComponent === oldName) {
+    store.selectedComponent = newName
+  }
+  
+  // 更新其他组件的依赖指向
+  Object.values(store.components).forEach((c) => {
+    c.dependencies = c.dependencies.map((d) => {
+      if (typeof d === 'string') return d === oldName ? newName : d
+      if (d.target === oldName) return { ...d, target: newName }
+      return d
+    })
+    if (c.dependency_edges) {
+      c.dependency_edges.forEach((e) => {
+        if (e.target === oldName) e.target = newName
+        if (e.source === oldName) e.source = newName
+      })
+    }
+  })
+  return true
+}
+
+export async function loadAppData() {
+  try {
+    store.strategyTemplates = await api.templates()
+  } catch (err) {
+    console.error('加载策略模板失败:', err)
+  }
+  try {
+    store.domainPack = await api.domainPacks()
+  } catch (err) {
+    console.error('加载领域包失败:', err)
+  }
 }
