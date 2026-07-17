@@ -22,16 +22,30 @@ export function Sidebar() {
 
   const menu = document.createElement('div')
   menu.style.flex = '1'
+  menu.className = 'nav-flow'
 
-  views.forEach((view) => {
+  views.forEach((view, idx) => {
     const btn = document.createElement('button')
     btn.className = 'nav-item'
-    btn.textContent = view.label
+    btn.innerHTML = `
+      <span class="nav-step-dot"></span>
+      <span class="nav-item-content">
+        <span class="nav-item-label">${view.label}</span>
+        <span class="nav-mini-badge">待开始</span>
+      </span>
+    `
     btn.dataset.view = view.id
     btn.onclick = () => {
       goTo(view.id)
     }
     menu.appendChild(btn)
+
+    if (idx < views.length - 1) {
+      const line = document.createElement('div')
+      line.className = 'nav-flow-line'
+      line.dataset.index = String(idx)
+      menu.appendChild(line)
+    }
   })
 
   // 用户信息区
@@ -86,8 +100,31 @@ function renderUserInfo(el) {
 }
 
 export function updateSidebarActive() {
-  document.querySelectorAll('.nav-item').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.view === store.currentView)
+  document.querySelectorAll('.nav-item').forEach((btn, idx) => {
+    const view = btn.dataset.view
+    const state = getViewState(view)
+    const isActive = view === store.currentView
+    btn.classList.toggle('active', isActive)
+    btn.classList.toggle('done', state === 'done')
+    btn.classList.toggle('pending', state === 'pending')
+
+    const badge = btn.querySelector('.nav-mini-badge')
+    if (!badge) return
+    badge.className = 'nav-mini-badge'
+    if (isActive) {
+      badge.textContent = '进行中'
+      badge.classList.add('active')
+    } else if (state === 'done') {
+      badge.textContent = '完成'
+      badge.classList.add('done')
+    } else {
+      badge.textContent = '待开始'
+    }
+
+    const line = document.querySelector(`.nav-flow-line[data-index="${idx}"]`)
+    if (line) {
+      line.classList.toggle('done', state === 'done')
+    }
   })
 }
 
@@ -108,4 +145,23 @@ export function updateSidebarStatus() {
 
 export function updateSidebarUserInfo() {
   renderUserInfo(document.getElementById('sidebar-user-info'))
+}
+
+function getViewState(viewId) {
+  if (viewId === 'scenario') {
+    return store.blackboxSpec ? 'done' : 'pending'
+  }
+  if (viewId === 'blackbox') {
+    return store.blackboxSpec ? 'done' : 'pending'
+  }
+  if (viewId === 'designer') {
+    return Object.keys(store.components).length > 0 ? 'done' : 'pending'
+  }
+  if (viewId === 'simulation') {
+    return store.simulationReport ? 'done' : 'pending'
+  }
+  if (viewId === 'review') {
+    return store.reviewResult || store.convergenceResult ? 'done' : 'pending'
+  }
+  return 'pending'
 }

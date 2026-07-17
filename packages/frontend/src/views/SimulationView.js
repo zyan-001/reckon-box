@@ -42,24 +42,34 @@ export function SimulationView() {
 
   container.querySelector('#btn-run').onclick = async () => {
     store.loading = true
+    const runBtn = container.querySelector('#btn-run')
+    runBtn.disabled = true
+    runBtn.textContent = '运行中...'
     const resultEl = container.querySelector('#sim-result')
-    resultEl.innerHTML = '<div class="empty-state">运行中...</div>'
+    renderLoading(resultEl, 0)
 
     try {
+      renderLoading(resultEl, 0)
       const components = buildComponentsForApi()
       const res = await api.runSimulation(components, store.selectedScenarioId)
-      store.loading = false
       if (res.ok && res.report) {
         store.simulationReport = res.report
+        renderLoading(resultEl, 1)
         await runConvergence(res.report)
+        renderLoading(resultEl, 2)
         await runReview(res.report)
+        store.loading = false
         renderResult(resultEl)
       } else {
+        store.loading = false
         resultEl.innerHTML = `<div style="color: var(--danger);">模拟失败</div>`
       }
     } catch (err) {
       store.loading = false
       resultEl.innerHTML = `<div style="color: var(--danger);">${err.message}</div>`
+    } finally {
+      runBtn.disabled = false
+      runBtn.textContent = '▶ 运行模拟'
     }
   }
 
@@ -68,6 +78,27 @@ export function SimulationView() {
   }
 
   return container
+}
+
+function renderLoading(el, stepIndex) {
+  const steps = [
+    '运行离散事件模拟',
+    '执行收敛检查',
+    '生成 LLM 审查建议',
+  ]
+  const stepHtml = steps.map((step, idx) => {
+    if (idx < stepIndex) return `<div class="loading-step done">${step}</div>`
+    if (idx === stepIndex) return `<div class="loading-step active">${step}</div>`
+    return `<div class="loading-step">${step}</div>`
+  }).join('')
+  el.innerHTML = `
+    <div class="card">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <div class="loading-steps">${stepHtml}</div>
+      </div>
+    </div>
+  `
 }
 
 function buildComponentsForApi() {
